@@ -40,6 +40,7 @@ h1{margin:0;font-size:30px;font-weight:900}
     <div class="pill">⭐ <span id="score">0</span></div>
     <div class="pill">🎈 <span id="count">0</span></div>
   </div>
+  <div id="learningText" style="margin-top:8px;font-size:20px;font-weight:1000;min-height:28px;">Let's learn ABC! 🎈</div>
 </header>
 <main id="game">
   <div class="start" id="start"><button id="startBtn">👆 Start Popping!</button></div>
@@ -91,33 +92,86 @@ function burst(x,y){
     game.appendChild(e);setTimeout(()=>e.remove(),700);
   });
 }
+const lessons = [
+  ['A','Apple','🍎'],['B','Ball','⚽'],['C','Cat','🐱'],['D','Dog','🐶'],
+  ['E','Elephant','🐘'],['F','Fish','🐟'],['G','Grapes','🍇'],['H','Hat','🎩'],
+  ['I','Ice Cream','🍦'],['J','Juice','🧃'],['K','Kite','🪁'],['L','Lion','🦁'],
+  ['M','Monkey','🐒'],['N','Nest','🪺'],['O','Orange','🍊'],['P','Parrot','🦜'],
+  ['Q','Queen','👑'],['R','Rabbit','🐰'],['S','Sun','☀️'],['T','Tiger','🐯'],
+  ['U','Umbrella','☂️'],['V','Van','🚐'],['W','Whale','🐳'],['X','Xylophone','🎵'],
+  ['Y','Yo-yo','🪀'],['Z','Zebra','🦓']
+];
+let lessonIndex = 0;
+let currentBubble = null;
+
+function speakLesson(letter, word) {
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(letter + ' for ' + word);
+      u.rate = 0.78;
+      u.pitch = 1.15;
+      u.volume = 1;
+      window.speechSynthesis.speak(u);
+    }
+  } catch(e) {}
+}
+
 function makeBubble(){
-  if(!started)return;
-  const b=document.createElement('button');b.className='bubble';
-  const size=58+Math.random()*48;
-  b.style.width=size+'px';b.style.height=size+'px';
-  b.style.left=(3+Math.random()*89)+'%';
-  b.style.top=(70+Math.random()*27)+'%';
-  b.style.background=colors[Math.floor(Math.random()*colors.length)];
-  b.style.setProperty('--dur',(8+Math.random()*5)+'s');
-  b.setAttribute('aria-label','Pop bubble');
+  if(!started || currentBubble) return;
+  const [letter,word,picture] = lessons[lessonIndex];
+  const b=document.createElement('button');
+  b.className='bubble';
+  const size=82;
+  b.style.width=size+'px'; b.style.height=size+'px';
+  b.style.left=(50-(size/2/game.clientWidth*100))+'%';
+  b.style.top='78%';
+  b.style.background=colors[lessonIndex % colors.length];
+  b.style.setProperty('--dur','11s');
+  b.setAttribute('aria-label', letter + ' for ' + word);
+  b.innerHTML='<span style="font-size:42px;font-weight:1000;color:white;text-shadow:0 2px 4px #0004">'+letter+'</span>';
+  currentBubble=b;
+  game.appendChild(b);
+
   b.addEventListener('pointerdown',e=>{
     e.preventDefault();
     const r=game.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
-    score++;count++;
-    scoreEl.textContent=score;countEl.textContent=count;
-    popSound();burst(x,y);
-    const p=document.createElement('div');p.className='pop';p.textContent=['🐶','🐱','🐰','🦄','🦋','🌈','🍎','🍓','⭐','🌸','🦁','🐼'][Math.floor(Math.random()*12)];
-    p.style.left=x+'px';p.style.top=y+'px';game.appendChild(p);setTimeout(()=>p.remove(),700);
+    score++; count++;
+    scoreEl.textContent=score; countEl.textContent=count;
+
+    const message = document.getElementById('learningText');
+    message.textContent = letter + ' for ' + word + ' ' + picture;
+    speakLesson(letter, word);
+    popSound(); burst(x,y);
+
+    const p=document.createElement('div');
+    p.className='pop';
+    p.textContent=picture;
+    p.style.left=x+'px'; p.style.top=y+'px';
+    game.appendChild(p);
+    setTimeout(()=>p.remove(),800);
+
     b.remove();
-    if(score%10===0)cheer();
+    currentBubble=null;
+    lessonIndex=(lessonIndex+1)%lessons.length;
+
+    if(score%10===0) cheer();
+    setTimeout(makeBubble,700);
   },{passive:false});
-  game.appendChild(b);
-  setTimeout(()=>b.remove(),9000);
+
+  setTimeout(()=>{
+    if(currentBubble===b){
+      b.remove();
+      currentBubble=null;
+      setTimeout(makeBubble,500);
+    }
+  },11000);
 }
+
 function refill(){
   document.querySelectorAll('.bubble').forEach(x=>x.remove());
-  for(let i=0;i<9;i++)setTimeout(makeBubble,i*180);
+  currentBubble=null;
+  makeBubble();
 }
 document.getElementById('startBtn').addEventListener('pointerdown',()=>{
   started=true;start.style.display='none';audio();refill();
@@ -127,7 +181,7 @@ document.getElementById('soundBtn').addEventListener('pointerdown',()=>{
   if(sound)audio();
 });
 document.getElementById('newBtn').addEventListener('pointerdown',()=>{if(started)refill()});
-setInterval(()=>{if(started && document.querySelectorAll('.bubble').length<9)makeBubble()},900);
+
 </script>
 </body>
 </html>
