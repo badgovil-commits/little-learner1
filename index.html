@@ -20,7 +20,7 @@ h1{margin:0;font-size:30px;font-weight:900}
 .bubble:after{content:"";position:absolute;width:28%;height:20%;border-radius:50%;background:#fff9;top:16%;left:19%;transform:rotate(-25deg)}
 @keyframes floatUp{from{transform:translateY(0) rotate(0)}to{transform:translateY(-125vh) rotate(35deg)}}
 .pop{position:absolute;pointer-events:none;font-size:46px;font-weight:1000;z-index:10;animation:pop .55s ease-out forwards}
-.picturePop{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) scale(.4);font-size:105px;z-index:12;pointer-events:none;animation:picturePop 1.25s ease-out forwards;text-align:center}
+.picturePop{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) scale(.4);font-size:105px;z-index:12;pointer-events:none;animation:picturePop 2.8s ease-in-out forwards;text-align:center}
 .pictureLabel{display:block;margin-top:4px;font-size:24px;font-weight:1000;color:#28304a;text-shadow:0 2px 8px #fff}
 @keyframes picturePop{0%{transform:translate(-50%,-50%) scale(.35);opacity:0}20%{transform:translate(-50%,-50%) scale(1.2);opacity:1}65%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-58%) scale(.8);opacity:0}}
 .celebrate{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:13;pointer-events:none;font-size:44px;font-weight:1000;animation:celebrate .95s ease-out forwards}
@@ -129,7 +129,7 @@ function showPicture(word, picture) {
   holder.className = 'picturePop';
   holder.innerHTML = picture + '<span class="pictureLabel">' + word + '</span>';
   game.appendChild(holder);
-  setTimeout(() => holder.remove(), 1300);
+  setTimeout(() => holder.remove(), 2800);
 }
 
 function showCelebration(text) {
@@ -240,7 +240,7 @@ function makeBubble(){
     setTimeout(() => {
       if (started && !currentBubble && popNumber % 7 === 0) makeSurpriseBubble();
       else makeBubble();
-    },700);
+    },3200);
   },{passive:false});
 
   setTimeout(()=>{
