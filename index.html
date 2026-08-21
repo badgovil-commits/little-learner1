@@ -20,6 +20,12 @@ h1{margin:0;font-size:30px;font-weight:900}
 .bubble:after{content:"";position:absolute;width:28%;height:20%;border-radius:50%;background:#fff9;top:16%;left:19%;transform:rotate(-25deg)}
 @keyframes floatUp{from{transform:translateY(0) rotate(0)}to{transform:translateY(-125vh) rotate(35deg)}}
 .pop{position:absolute;pointer-events:none;font-size:46px;font-weight:1000;z-index:10;animation:pop .55s ease-out forwards}
+.picturePop{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) scale(.4);font-size:105px;z-index:12;pointer-events:none;animation:picturePop 1.25s ease-out forwards;text-align:center}
+.pictureLabel{display:block;margin-top:4px;font-size:24px;font-weight:1000;color:#28304a;text-shadow:0 2px 8px #fff}
+@keyframes picturePop{0%{transform:translate(-50%,-50%) scale(.35);opacity:0}20%{transform:translate(-50%,-50%) scale(1.2);opacity:1}65%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-58%) scale(.8);opacity:0}}
+.celebrate{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:13;pointer-events:none;font-size:44px;font-weight:1000;animation:celebrate .95s ease-out forwards}
+@keyframes celebrate{0%{opacity:0;transform:scale(.5)}25%{opacity:1;transform:scale(1.08)}100%{opacity:0;transform:scale(1.2)}}
+.surpriseBubble{box-shadow:inset -8px -10px 16px #0002,inset 7px 6px 12px #fff9,0 0 0 6px #ffd95a55,0 8px 18px #28304a30!important}
 @keyframes pop{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}35%{transform:translate(-50%,-50%) scale(1.3);opacity:1}100%{transform:translate(-50%,-80%) scale(1);opacity:0}}
 .spark{position:absolute;pointer-events:none;font-size:22px;z-index:9;animation:spark .8s ease-out forwards}
 @keyframes spark{0%{transform:translate(-50%,-50%) scale(.4);opacity:1}100%{transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1.1) rotate(180deg);opacity:0}}
@@ -35,7 +41,7 @@ h1{margin:0;font-size:30px;font-weight:900}
 <div class="app">
 <header>
   <h1>🎈 Pop Everything!</h1>
-  <div class="subtitle">Tap the bubbles and make them POP!</div>
+  <div class="subtitle">Pop, see, hear and learn! 🎈</div>
   <div class="stats">
     <div class="pill">⭐ <span id="score">0</span></div>
     <div class="pill">🎈 <span id="count">0</span></div>
@@ -92,6 +98,19 @@ function burst(x,y){
     game.appendChild(e);setTimeout(()=>e.remove(),700);
   });
 }
+const animalSounds = {
+  Cat:'Meow!',
+  Dog:'Woof!',
+  Elephant:'Trumpet!',
+  Fish:'Blub blub!',
+  Lion:'Roar!',
+  Monkey:'Ooh ooh ah ah!',
+  Parrot:'Squawk!',
+  Rabbit:'Squeak!',
+  Tiger:'Roar!',
+  Whale:'Whoosh!'
+};
+
 const lessons = [
   ['A','Apple','🍎'],['B','Ball','⚽'],['C','Cat','🐱'],['D','Dog','🐶'],
   ['E','Elephant','🐘'],['F','Fish','🐟'],['G','Grapes','🍇'],['H','Hat','🎩'],
@@ -103,6 +122,56 @@ const lessons = [
 ];
 let lessonIndex = 0;
 let currentBubble = null;
+let popNumber = 0;
+
+function showPicture(word, picture) {
+  const holder = document.createElement('div');
+  holder.className = 'picturePop';
+  holder.innerHTML = picture + '<span class="pictureLabel">' + word + '</span>';
+  game.appendChild(holder);
+  setTimeout(() => holder.remove(), 1300);
+}
+
+function showCelebration(text) {
+  const e = document.createElement('div');
+  e.className = 'celebrate';
+  e.textContent = text;
+  game.appendChild(e);
+  setTimeout(() => e.remove(), 1000);
+}
+
+function makeSurpriseBubble() {
+  if (!started || currentBubble) return;
+  const b = document.createElement('button');
+  b.className = 'bubble surpriseBubble';
+  const size = 92;
+  b.style.width=size+'px'; b.style.height=size+'px';
+  b.style.left=(50-(size/2/game.clientWidth*100))+'%';
+  b.style.top='78%';
+  b.style.background='#ffd95a';
+  b.style.setProperty('--dur','10s');
+  b.setAttribute('aria-label','Surprise balloon');
+  b.innerHTML='<span style="font-size:42px;font-weight:1000;color:white;text-shadow:0 2px 4px #0004">🎁</span>';
+  currentBubble=b;
+  game.appendChild(b);
+
+  b.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+    const r=game.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+    count++;
+    score++;
+    scoreEl.textContent=score; countEl.textContent=count;
+    document.getElementById('learningText').textContent='Surprise! 🎉';
+    popSound(); burst(x,y); cheer(); showCelebration('🎉 WOW! 🌈 ⭐');
+    showPicture('Surprise!', ['🌈','🦋','⭐','🎉','🐶','🦄'][Math.floor(Math.random()*6)]);
+    b.remove(); currentBubble=null;
+    setTimeout(makeBubble,900);
+  },{passive:false});
+
+  setTimeout(()=>{
+    if(currentBubble===b){ b.remove(); currentBubble=null; setTimeout(makeBubble,500); }
+  },10000);
+}
 
 function speakLesson(letter, word) {
   try {
@@ -113,6 +182,16 @@ function speakLesson(letter, word) {
       u.pitch = 1.15;
       u.volume = 1;
       window.speechSynthesis.speak(u);
+
+      if (animalSounds[word]) {
+        u.onend = () => {
+          const s = new SpeechSynthesisUtterance(animalSounds[word]);
+          s.rate = 0.82;
+          s.pitch = 1.18;
+          s.volume = 1;
+          window.speechSynthesis.speak(s);
+        };
+      }
     }
   } catch(e) {}
 }
@@ -136,13 +215,15 @@ function makeBubble(){
   b.addEventListener('pointerdown',e=>{
     e.preventDefault();
     const r=game.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
-    score++; count++;
+    score++; count++; popNumber++;
     scoreEl.textContent=score; countEl.textContent=count;
 
     const message = document.getElementById('learningText');
     message.textContent = letter + ' for ' + word + ' ' + picture;
     speakLesson(letter, word);
     popSound(); burst(x,y);
+    showPicture(word, picture);
+    if (popNumber % 5 === 0) showCelebration('🎉 Great job! ⭐');
 
     const p=document.createElement('div');
     p.className='pop';
@@ -156,7 +237,10 @@ function makeBubble(){
     lessonIndex=(lessonIndex+1)%lessons.length;
 
     if(score%10===0) cheer();
-    setTimeout(makeBubble,700);
+    setTimeout(() => {
+      if (started && !currentBubble && popNumber % 7 === 0) makeSurpriseBubble();
+      else makeBubble();
+    },700);
   },{passive:false});
 
   setTimeout(()=>{
