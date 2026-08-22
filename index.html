@@ -155,8 +155,9 @@ function makeSurpriseBubble() {
   currentBubble=b;
   game.appendChild(b);
 
-  b.addEventListener('pointerdown',e=>{
+  b.addEventListener('pointerdown',async e=>{
     e.preventDefault();
+    b.disabled = true;
     const r=game.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
     count++;
     score++;
@@ -174,26 +175,19 @@ function makeSurpriseBubble() {
 }
 
 function speakLesson(letter, word) {
-  try {
-    if ('speechSynthesis' in window) {
+  return new Promise(resolve => {
+    try {
+      if (!sound || !('speechSynthesis' in window)) { resolve(); return; }
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(letter + ' for ' + word);
-      u.rate = 0.78;
-      u.pitch = 1.15;
-      u.volume = 1;
+      u.rate = 0.78; u.pitch = 1.15; u.volume = 1;
+      let finished = false;
+      const done = () => { if (!finished) { finished = true; resolve(); } };
+      u.onend = done; u.onerror = done;
       window.speechSynthesis.speak(u);
-
-      if (animalSounds[word]) {
-        u.onend = () => {
-          const s = new SpeechSynthesisUtterance(animalSounds[word]);
-          s.rate = 0.82;
-          s.pitch = 1.18;
-          s.volume = 1;
-          window.speechSynthesis.speak(s);
-        };
-      }
-    }
-  } catch(e) {}
+      setTimeout(done, 2600);
+    } catch(e) { resolve(); }
+  });
 }
 
 function makeBubble(){
@@ -212,7 +206,7 @@ function makeBubble(){
   currentBubble=b;
   game.appendChild(b);
 
-  b.addEventListener('pointerdown',e=>{
+  b.addEventListener('pointerdown',async e=>{
     e.preventDefault();
     const r=game.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
     score++; count++; popNumber++;
@@ -220,10 +214,11 @@ function makeBubble(){
 
     const message = document.getElementById('learningText');
     message.textContent = letter + ' for ' + word + ' ' + picture;
-    speakLesson(letter, word);
     popSound(); burst(x,y);
     showPicture(word, picture);
+    showPicture(word, picture);
     if (popNumber % 5 === 0) showCelebration('🎉 Great job! ⭐');
+    await speakLesson(letter, word);
 
     const p=document.createElement('div');
     p.className='pop';
@@ -240,7 +235,7 @@ function makeBubble(){
     setTimeout(() => {
       if (started && !currentBubble && popNumber % 7 === 0) makeSurpriseBubble();
       else makeBubble();
-    },3200);
+    },700);
   },{passive:false});
 
   setTimeout(()=>{
